@@ -1,0 +1,255 @@
+
+Self_made.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .data         00000000  00800100  00800100  000001a0  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  1 .text         0000014c  00000000  00000000  00000054  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .comment      00000030  00000000  00000000  000001a0  2**0
+                  CONTENTS, READONLY
+  3 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  000001d0  2**2
+                  CONTENTS, READONLY
+  4 .debug_aranges 00000030  00000000  00000000  0000020c  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  5 .debug_info   000008e5  00000000  00000000  0000023c  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  6 .debug_abbrev 000007df  00000000  00000000  00000b21  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_line   0000026f  00000000  00000000  00001300  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_frame  00000074  00000000  00000000  00001570  2**2
+                  CONTENTS, READONLY, DEBUGGING
+  9 .debug_str    00000422  00000000  00000000  000015e4  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 10 .debug_loc    00000190  00000000  00000000  00001a06  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 11 .debug_ranges 00000020  00000000  00000000  00001b96  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	1d c0       	rjmp	.+58     	; 0x3c <__ctors_end>
+   2:	24 c0       	rjmp	.+72     	; 0x4c <__bad_interrupt>
+   4:	23 c0       	rjmp	.+70     	; 0x4c <__bad_interrupt>
+   6:	22 c0       	rjmp	.+68     	; 0x4c <__bad_interrupt>
+   8:	21 c0       	rjmp	.+66     	; 0x4c <__bad_interrupt>
+   a:	20 c0       	rjmp	.+64     	; 0x4c <__bad_interrupt>
+   c:	1f c0       	rjmp	.+62     	; 0x4c <__bad_interrupt>
+   e:	1e c0       	rjmp	.+60     	; 0x4c <__bad_interrupt>
+  10:	1d c0       	rjmp	.+58     	; 0x4c <__bad_interrupt>
+  12:	1c c0       	rjmp	.+56     	; 0x4c <__bad_interrupt>
+  14:	1b c0       	rjmp	.+54     	; 0x4c <__bad_interrupt>
+  16:	1a c0       	rjmp	.+52     	; 0x4c <__bad_interrupt>
+  18:	19 c0       	rjmp	.+50     	; 0x4c <__bad_interrupt>
+  1a:	18 c0       	rjmp	.+48     	; 0x4c <__bad_interrupt>
+  1c:	17 c0       	rjmp	.+46     	; 0x4c <__bad_interrupt>
+  1e:	16 c0       	rjmp	.+44     	; 0x4c <__bad_interrupt>
+  20:	15 c0       	rjmp	.+42     	; 0x4c <__bad_interrupt>
+  22:	14 c0       	rjmp	.+40     	; 0x4c <__bad_interrupt>
+  24:	13 c0       	rjmp	.+38     	; 0x4c <__bad_interrupt>
+  26:	12 c0       	rjmp	.+36     	; 0x4c <__bad_interrupt>
+  28:	11 c0       	rjmp	.+34     	; 0x4c <__bad_interrupt>
+  2a:	10 c0       	rjmp	.+32     	; 0x4c <__bad_interrupt>
+  2c:	0f c0       	rjmp	.+30     	; 0x4c <__bad_interrupt>
+  2e:	0e c0       	rjmp	.+28     	; 0x4c <__bad_interrupt>
+  30:	0d c0       	rjmp	.+26     	; 0x4c <__bad_interrupt>
+  32:	0c c0       	rjmp	.+24     	; 0x4c <__bad_interrupt>
+  34:	0b c0       	rjmp	.+22     	; 0x4c <__bad_interrupt>
+  36:	0a c0       	rjmp	.+20     	; 0x4c <__bad_interrupt>
+  38:	09 c0       	rjmp	.+18     	; 0x4c <__bad_interrupt>
+  3a:	08 c0       	rjmp	.+16     	; 0x4c <__bad_interrupt>
+
+0000003c <__ctors_end>:
+  3c:	11 24       	eor	r1, r1
+  3e:	1f be       	out	0x3f, r1	; 63
+  40:	cf ef       	ldi	r28, 0xFF	; 255
+  42:	d2 e0       	ldi	r29, 0x02	; 2
+  44:	de bf       	out	0x3e, r29	; 62
+  46:	cd bf       	out	0x3d, r28	; 61
+  48:	66 d0       	rcall	.+204    	; 0x116 <main>
+  4a:	7e c0       	rjmp	.+252    	; 0x148 <_exit>
+
+0000004c <__bad_interrupt>:
+  4c:	d9 cf       	rjmp	.-78     	; 0x0 <__vectors>
+
+0000004e <set_big_RGB_LED>:
+#define OFF 0
+
+typedef unsigned char byte;
+
+void set_big_RGB_LED(byte red,byte green, byte blue)
+{
+  4e:	cf 93       	push	r28
+  50:	df 93       	push	r29
+  52:	00 d0       	rcall	.+0      	; 0x54 <set_big_RGB_LED+0x6>
+  54:	00 d0       	rcall	.+0      	; 0x56 <set_big_RGB_LED+0x8>
+  56:	cd b7       	in	r28, 0x3d	; 61
+  58:	de b7       	in	r29, 0x3e	; 62
+  5a:	8a 83       	std	Y+2, r24	; 0x02
+  5c:	6b 83       	std	Y+3, r22	; 0x03
+  5e:	4c 83       	std	Y+4, r20	; 0x04
+	byte color = red|(green<<1)|(blue<<2);
+  60:	8b 81       	ldd	r24, Y+3	; 0x03
+  62:	88 2f       	mov	r24, r24
+  64:	90 e0       	ldi	r25, 0x00	; 0
+  66:	88 0f       	add	r24, r24
+  68:	99 1f       	adc	r25, r25
+  6a:	98 2f       	mov	r25, r24
+  6c:	8a 81       	ldd	r24, Y+2	; 0x02
+  6e:	29 2f       	mov	r18, r25
+  70:	28 2b       	or	r18, r24
+  72:	8c 81       	ldd	r24, Y+4	; 0x04
+  74:	88 2f       	mov	r24, r24
+  76:	90 e0       	ldi	r25, 0x00	; 0
+  78:	88 0f       	add	r24, r24
+  7a:	99 1f       	adc	r25, r25
+  7c:	88 0f       	add	r24, r24
+  7e:	99 1f       	adc	r25, r25
+  80:	82 2b       	or	r24, r18
+  82:	89 83       	std	Y+1, r24	; 0x01
+	DDRB = 0x07;
+  84:	87 e3       	ldi	r24, 0x37	; 55
+  86:	90 e0       	ldi	r25, 0x00	; 0
+  88:	27 e0       	ldi	r18, 0x07	; 7
+  8a:	fc 01       	movw	r30, r24
+  8c:	20 83       	st	Z, r18
+	PORTB = (PORTB&0xF8);
+  8e:	88 e3       	ldi	r24, 0x38	; 56
+  90:	90 e0       	ldi	r25, 0x00	; 0
+  92:	28 e3       	ldi	r18, 0x38	; 56
+  94:	30 e0       	ldi	r19, 0x00	; 0
+  96:	f9 01       	movw	r30, r18
+  98:	20 81       	ld	r18, Z
+  9a:	28 7f       	andi	r18, 0xF8	; 248
+  9c:	fc 01       	movw	r30, r24
+  9e:	20 83       	st	Z, r18
+	PORTB = (PORTB|color);
+  a0:	88 e3       	ldi	r24, 0x38	; 56
+  a2:	90 e0       	ldi	r25, 0x00	; 0
+  a4:	28 e3       	ldi	r18, 0x38	; 56
+  a6:	30 e0       	ldi	r19, 0x00	; 0
+  a8:	f9 01       	movw	r30, r18
+  aa:	30 81       	ld	r19, Z
+  ac:	29 81       	ldd	r18, Y+1	; 0x01
+  ae:	23 2b       	or	r18, r19
+  b0:	fc 01       	movw	r30, r24
+  b2:	20 83       	st	Z, r18
+}
+  b4:	00 00       	nop
+  b6:	0f 90       	pop	r0
+  b8:	0f 90       	pop	r0
+  ba:	0f 90       	pop	r0
+  bc:	0f 90       	pop	r0
+  be:	df 91       	pop	r29
+  c0:	cf 91       	pop	r28
+  c2:	08 95       	ret
+
+000000c4 <get_buttons>:
+
+byte get_buttons(byte button)
+{
+  c4:	cf 93       	push	r28
+  c6:	df 93       	push	r29
+  c8:	1f 92       	push	r1
+  ca:	cd b7       	in	r28, 0x3d	; 61
+  cc:	de b7       	in	r29, 0x3e	; 62
+  ce:	89 83       	std	Y+1, r24	; 0x01
+	DDRA = (DDRA & 0xFC);
+  d0:	8a e3       	ldi	r24, 0x3A	; 58
+  d2:	90 e0       	ldi	r25, 0x00	; 0
+  d4:	2a e3       	ldi	r18, 0x3A	; 58
+  d6:	30 e0       	ldi	r19, 0x00	; 0
+  d8:	f9 01       	movw	r30, r18
+  da:	20 81       	ld	r18, Z
+  dc:	2c 7f       	andi	r18, 0xFC	; 252
+  de:	fc 01       	movw	r30, r24
+  e0:	20 83       	st	Z, r18
+	switch(button)
+  e2:	89 81       	ldd	r24, Y+1	; 0x01
+  e4:	88 2f       	mov	r24, r24
+  e6:	90 e0       	ldi	r25, 0x00	; 0
+  e8:	81 30       	cpi	r24, 0x01	; 1
+  ea:	91 05       	cpc	r25, r1
+  ec:	19 f0       	breq	.+6      	; 0xf4 <get_buttons+0x30>
+  ee:	02 97       	sbiw	r24, 0x02	; 2
+  f0:	39 f0       	breq	.+14     	; 0x100 <get_buttons+0x3c>
+  f2:	0c c0       	rjmp	.+24     	; 0x10c <get_buttons+0x48>
+	{
+		case 1: return (PINA&0x01);
+  f4:	89 e3       	ldi	r24, 0x39	; 57
+  f6:	90 e0       	ldi	r25, 0x00	; 0
+  f8:	fc 01       	movw	r30, r24
+  fa:	80 81       	ld	r24, Z
+  fc:	81 70       	andi	r24, 0x01	; 1
+  fe:	07 c0       	rjmp	.+14     	; 0x10e <get_buttons+0x4a>
+			break;
+		case 2: return (PINA&0x02);
+ 100:	89 e3       	ldi	r24, 0x39	; 57
+ 102:	90 e0       	ldi	r25, 0x00	; 0
+ 104:	fc 01       	movw	r30, r24
+ 106:	80 81       	ld	r24, Z
+ 108:	82 70       	andi	r24, 0x02	; 2
+ 10a:	01 c0       	rjmp	.+2      	; 0x10e <get_buttons+0x4a>
+			break;
+		default: return 2;
+ 10c:	82 e0       	ldi	r24, 0x02	; 2
+	}
+}
+ 10e:	0f 90       	pop	r0
+ 110:	df 91       	pop	r29
+ 112:	cf 91       	pop	r28
+ 114:	08 95       	ret
+
+00000116 <main>:
+
+int main(void)
+{
+ 116:	cf 93       	push	r28
+ 118:	df 93       	push	r29
+ 11a:	1f 92       	push	r1
+ 11c:	cd b7       	in	r28, 0x3d	; 61
+ 11e:	de b7       	in	r29, 0x3e	; 62
+	byte the_button;
+	
+	set_big_RGB_LED(OFF,ON,OFF);
+ 120:	40 e0       	ldi	r20, 0x00	; 0
+ 122:	61 e0       	ldi	r22, 0x01	; 1
+ 124:	80 e0       	ldi	r24, 0x00	; 0
+ 126:	93 df       	rcall	.-218    	; 0x4e <set_big_RGB_LED>
+	
+	while (1)
+	{
+		the_button = get_buttons(1);
+ 128:	81 e0       	ldi	r24, 0x01	; 1
+ 12a:	cc df       	rcall	.-104    	; 0xc4 <get_buttons>
+ 12c:	89 83       	std	Y+1, r24	; 0x01
+		if(the_button==1)
+ 12e:	89 81       	ldd	r24, Y+1	; 0x01
+ 130:	81 30       	cpi	r24, 0x01	; 1
+ 132:	29 f4       	brne	.+10     	; 0x13e <main+0x28>
+		{
+			set_big_RGB_LED(OFF,ON,OFF);
+ 134:	40 e0       	ldi	r20, 0x00	; 0
+ 136:	61 e0       	ldi	r22, 0x01	; 1
+ 138:	80 e0       	ldi	r24, 0x00	; 0
+ 13a:	89 df       	rcall	.-238    	; 0x4e <set_big_RGB_LED>
+ 13c:	f5 cf       	rjmp	.-22     	; 0x128 <main+0x12>
+		}
+		else{
+			set_big_RGB_LED(ON,OFF,OFF);
+ 13e:	40 e0       	ldi	r20, 0x00	; 0
+ 140:	60 e0       	ldi	r22, 0x00	; 0
+ 142:	81 e0       	ldi	r24, 0x01	; 1
+ 144:	84 df       	rcall	.-248    	; 0x4e <set_big_RGB_LED>
+		}
+	}
+ 146:	f0 cf       	rjmp	.-32     	; 0x128 <main+0x12>
+
+00000148 <_exit>:
+ 148:	f8 94       	cli
+
+0000014a <__stop_program>:
+ 14a:	ff cf       	rjmp	.-2      	; 0x14a <__stop_program>
