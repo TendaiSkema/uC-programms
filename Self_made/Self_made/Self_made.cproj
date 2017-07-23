@@ -132,7 +132,7 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="NewMain.c">
+    <Compile Include="self_made_main.c">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>

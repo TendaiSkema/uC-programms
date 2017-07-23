@@ -194,7 +194,7 @@ void code_cracker_game()
 	}
 }
 
-void start_fighter_game()
+u8 start_fighter_game()
 {
 	clear_lcd();
 
@@ -226,7 +226,7 @@ void start_fighter_game()
 	//other game vars
 	u8 ind = 0;
 	u8 spawn_points[35] = {1,0,2,1,1,0,3,2,3,3,2,0,2,3,0,1,2,3,1,3,2,1,0,0,3,0,1,2,3,0,3,2,1,0,1};
-	u16 fps = 60;
+	u16 fps = 40;
 
 	set_RGB_LED(losted_points,0,life_points);
 
@@ -238,7 +238,10 @@ void start_fighter_game()
 			//check game end
 			if (ind==35)
 			{
-				break;
+				clear_lcd();
+				write_text(1,6,PSTR("YOU WIN"));
+				wait_1ms(2000);
+				return 1;
 			}
 			target_y_pos = spawn_points[ind];
 			ind++;
@@ -331,6 +334,10 @@ void start_fighter_game()
 		respawn--;
 		wait_1ms(fps);
 	}
+	clear_lcd();
+	write_text(1,6,PSTR("YOU LOSE"));
+	wait_1ms(2000);
+	return 0;
 }
 
 

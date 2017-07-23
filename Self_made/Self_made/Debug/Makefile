@@ -37,7 +37,7 @@ SUBDIRS :=
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS +=  \
-../NewMain.c
+../self_made_main.c
 
 
 PREPROCESSING_SRCS += 
@@ -47,16 +47,16 @@ ASM_SRCS +=
 
 
 OBJS +=  \
-NewMain.o
+self_made_main.o
 
 OBJS_AS_ARGS +=  \
-NewMain.o
+self_made_main.o
 
 C_DEPS +=  \
-NewMain.d
+self_made_main.d
 
 C_DEPS_AS_ARGS +=  \
-NewMain.d
+self_made_main.d
 
 OUTPUT_FILE_PATH +=Self_made.elf
 

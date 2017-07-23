@@ -1,5 +1,7 @@
 Archive member included to satisfy reference by file (symbol)
 
+c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_udivmodqi4.o)
+                              self_made_main.o (__udivmodqi4)
 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_exit.o)
                               C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATtiny_DFP/1.2.118/gcc/dev/attiny841/avr25/crtattiny841.o (exit)
 
@@ -7,9 +9,23 @@ Discarded input sections
 
  .data          0x00000000        0x0 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATtiny_DFP/1.2.118/gcc/dev/attiny841/avr25/crtattiny841.o
  .bss           0x00000000        0x0 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATtiny_DFP/1.2.118/gcc/dev/attiny841/avr25/crtattiny841.o
- .text          0x00000000        0x0 NewMain.o
- .data          0x00000000        0x0 NewMain.o
- .bss           0x00000000        0x0 NewMain.o
+ .text          0x00000000        0x0 self_made_main.o
+ .data          0x00000000        0x0 self_made_main.o
+ .bss           0x00000000        0x0 self_made_main.o
+ .text          0x00000000        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_udivmodqi4.o)
+ .data          0x00000000        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_udivmodqi4.o)
+ .bss           0x00000000        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_udivmodqi4.o)
+ .text.libgcc.mul
+                0x00000000        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_udivmodqi4.o)
+ .text.libgcc   0x00000000        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_udivmodqi4.o)
+ .text.libgcc.prologue
+                0x00000000        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_udivmodqi4.o)
+ .text.libgcc.builtins
+                0x00000000        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_udivmodqi4.o)
+ .text.libgcc.fmul
+                0x00000000        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_udivmodqi4.o)
+ .text.libgcc.fixed
+                0x00000000        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_udivmodqi4.o)
  .text          0x00000000        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_exit.o)
  .data          0x00000000        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_exit.o)
  .bss           0x00000000        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_exit.o)
@@ -43,7 +59,7 @@ Linker script and memory map
 
 Address of section .data set to 0x800100
 LOAD C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATtiny_DFP/1.2.118/gcc/dev/attiny841/avr25/crtattiny841.o
-LOAD NewMain.o
+LOAD self_made_main.o
 START GROUP
 LOAD c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr25\libm.a
 END GROUP
@@ -151,7 +167,7 @@ END GROUP
 .rela.plt
  *(.rela.plt)
 
-.text           0x00000000      0x14c
+.text           0x00000000      0x232
  *(.vectors)
  .vectors       0x00000000       0x3c C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATtiny_DFP/1.2.118/gcc/dev/attiny841/avr25/crtattiny841.o
                 0x00000000                __vector_default
@@ -239,18 +255,27 @@ END GROUP
                 0x0000004e                . = ALIGN (0x2)
  *(.text.*)
  .text.set_big_RGB_LED
-                0x0000004e       0x76 NewMain.o
+                0x0000004e       0x76 self_made_main.o
                 0x0000004e                set_big_RGB_LED
+ .text.wait_1ms
+                0x000000c4       0x42 self_made_main.o
+                0x000000c4                wait_1ms
+ .text.RGB_LED_PWM
+                0x00000106       0x8a self_made_main.o
+                0x00000106                RGB_LED_PWM
  .text.get_buttons
-                0x000000c4       0x52 NewMain.o
-                0x000000c4                get_buttons
- .text.main     0x00000116       0x32 NewMain.o
-                0x00000116                main
-                0x00000148                . = ALIGN (0x2)
+                0x00000190       0x52 self_made_main.o
+                0x00000190                get_buttons
+ .text.main     0x000001e2       0x34 self_made_main.o
+                0x000001e2                main
+ .text.libgcc.div
+                0x00000216       0x18 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_udivmodqi4.o)
+                0x00000216                __udivmodqi4
+                0x0000022e                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x00000148        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_exit.o)
-                0x00000148                _exit
-                0x00000148                exit
+ .fini9         0x0000022e        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_exit.o)
+                0x0000022e                _exit
+                0x0000022e                exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -269,11 +294,11 @@ END GROUP
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x00000148        0x4 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_exit.o)
+ .fini0         0x0000022e        0x4 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr25\libgcc.a(_exit.o)
  *(.fini0)
-                0x0000014c                _etext = .
+                0x00000232                _etext = .
 
-.data           0x00800100        0x0 load address 0x0000014c
+.data           0x00800100        0x0 load address 0x00000232
                 [!provide]                PROVIDE (__data_start, .)
  *(.data)
  *(.data*)
@@ -290,8 +315,8 @@ END GROUP
  *(.bss*)
  *(COMMON)
                 [!provide]                PROVIDE (__bss_end, .)
-                0x0000014c                __data_load_start = LOADADDR (.data)
-                0x0000014c                __data_load_end = (__data_load_start + SIZEOF (.data))
+                0x00000232                __data_load_start = LOADADDR (.data)
+                0x00000232                __data_load_end = (__data_load_start + SIZEOF (.data))
 
 .noinit         0x00800100        0x0
                 [!provide]                PROVIDE (__noinit_start, .)
@@ -339,7 +364,7 @@ END GROUP
 
 .comment        0x00000000       0x30
  *(.comment)
- .comment       0x00000000       0x30 NewMain.o
+ .comment       0x00000000       0x30 self_made_main.o
                                  0x31 (size before relaxing)
 
 .note.gnu.avr.deviceinfo
@@ -362,42 +387,42 @@ END GROUP
 .debug_sfnames
  *(.debug_sfnames)
 
-.debug_aranges  0x00000000       0x30
+.debug_aranges  0x00000000       0x40
  *(.debug_aranges)
  .debug_aranges
-                0x00000000       0x30 NewMain.o
+                0x00000000       0x40 self_made_main.o
 
 .debug_pubnames
  *(.debug_pubnames)
 
-.debug_info     0x00000000      0x8e5
+.debug_info     0x00000000      0xa1c
  *(.debug_info .gnu.linkonce.wi.*)
  .debug_info    0x00000000      0x75c C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATtiny_DFP/1.2.118/gcc/dev/attiny841/avr25/crtattiny841.o
- .debug_info    0x0000075c      0x189 NewMain.o
+ .debug_info    0x0000075c      0x2c0 self_made_main.o
 
-.debug_abbrev   0x00000000      0x7df
+.debug_abbrev   0x00000000      0x7f7
  *(.debug_abbrev)
  .debug_abbrev  0x00000000      0x6f6 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATtiny_DFP/1.2.118/gcc/dev/attiny841/avr25/crtattiny841.o
- .debug_abbrev  0x000006f6       0xe9 NewMain.o
+ .debug_abbrev  0x000006f6      0x101 self_made_main.o
 
-.debug_line     0x00000000      0x26f
+.debug_line     0x00000000      0x31d
  *(.debug_line .debug_line.* .debug_line_end)
  .debug_line    0x00000000      0x14b C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATtiny_DFP/1.2.118/gcc/dev/attiny841/avr25/crtattiny841.o
- .debug_line    0x0000014b      0x124 NewMain.o
+ .debug_line    0x0000014b      0x1d2 self_made_main.o
 
-.debug_frame    0x00000000       0x74
+.debug_frame    0x00000000       0xb4
  *(.debug_frame)
- .debug_frame   0x00000000       0x74 NewMain.o
+ .debug_frame   0x00000000       0xb4 self_made_main.o
 
-.debug_str      0x00000000      0x422
+.debug_str      0x00000000      0x472
  *(.debug_str)
  .debug_str     0x00000000      0x2a5 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATtiny_DFP/1.2.118/gcc/dev/attiny841/avr25/crtattiny841.o
- .debug_str     0x000002a5      0x17d NewMain.o
-                                0x1b8 (size before relaxing)
+ .debug_str     0x000002a5      0x1cd self_made_main.o
+                                0x208 (size before relaxing)
 
-.debug_loc      0x00000000      0x190
+.debug_loc      0x00000000      0x368
  *(.debug_loc)
- .debug_loc     0x00000000      0x190 NewMain.o
+ .debug_loc     0x00000000      0x368 self_made_main.o
 
 .debug_macinfo
  *(.debug_macinfo)
@@ -417,9 +442,9 @@ END GROUP
 .debug_pubtypes
  *(.debug_pubtypes)
 
-.debug_ranges   0x00000000       0x20
+.debug_ranges   0x00000000       0x30
  *(.debug_ranges)
- .debug_ranges  0x00000000       0x20 NewMain.o
+ .debug_ranges  0x00000000       0x30 self_made_main.o
 
 .debug_macro
  *(.debug_macro)
