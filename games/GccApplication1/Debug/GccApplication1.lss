@@ -23,11 +23,11 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING
   9 .debug_frame  0000030c  00000000  00000000  000054fc  2**2
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_str    00000742  00000000  00000000  00005808  2**0
+ 10 .debug_str    000006fd  00000000  00000000  00005808  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_loc    0000187a  00000000  00000000  00005f4a  2**0
+ 11 .debug_loc    0000187a  00000000  00000000  00005f05  2**0
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_ranges 000000b8  00000000  00000000  000077c4  2**0
+ 12 .debug_ranges 000000b8  00000000  00000000  0000777f  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -227,6 +227,12 @@ Disassembly of section .text:
      21a:	f2 ce       	rjmp	.-540    	; 0x0 <__vectors>
 
 0000021c <wait_1ms>:
+		LED_2_ON;									// Ausgang wieder auf 1 zurücksetzen. ( Wird erst aktiv, wen Port wieder als Ausgang definiert ist.)
+	}
+	else DDRA  &= ~0x02;				// Port als Eingang definieren: Taste 2
+	if(Taste_2)	
+	{ DDRA  |=  0x02;						// Port wieder als Ausgang definieren: Taste 2 auf Mocca Mini					 
+		return(1);
      21c:	cf 93       	push	r28
      21e:	df 93       	push	r29
      220:	00 d0       	rcall	.+0      	; 0x222 <wait_1ms+0x6>
@@ -775,28 +781,65 @@ Disassembly of section .text:
      65e:	08 95       	ret
 
 00000660 <get_ADC_Channel>:
+}
+
+
+
+u16 get_ADC_Channel(u8 channel)	
+{	u16 AD_Result;
      660:	df 93       	push	r29
+	u8  i;
+	
+	// A/D-Wandler Initialisieren
+	ADMUXA = channel;		// select Channel 
      662:	89 b9       	out	0x09, r24	; 9
+	
+	if(channel == 12) ADMUXB = 0x01;			// Wenn interner Temperatur-Sensor gewählt wird, muss die "Internal 1.1V Reference" selektiert sein.
      664:	8c 30       	cpi	r24, 0x0C	; 12
      666:	79 f0       	breq	.+30     	; 0x686 <get_ADC_Channel+0x26>
+						   else ADMUXB = 0x00;			// Vcc als Referenz = 5V
      668:	18 b8       	out	0x08, r1	; 8
+	// ADMUXB = 0x03;			// Internal 4.096V reference
+	
+	if(channel == 12) for(i=0; i<8; i++) delay_nop(120);		// 1.6ms (8x 0.2us) warten, bis interne Temperatur gemessen werden kann
+	
+	
+	ADCSRA |=  (1 << ADEN) | (1 << ADSC);			// A/D-Wandler Enable, Start, Single Mode
      66a:	85 b1       	in	r24, 0x05	; 5
      66c:	80 6c       	ori	r24, 0xC0	; 192
      66e:	85 b9       	out	0x05, r24	; 5
+	while(ADCSRA & (1 << ADSC));							// Warten, bis Messung fertig ist.
      670:	2e 99       	sbic	0x05, 6	; 5
      672:	fe cf       	rjmp	.-4      	; 0x670 <get_ADC_Channel+0x10>
+	
+	AD_Result = ADCL + (ADCH << 8);			//	ADCL zuerst lesen und dann erst ADCH !!!
      674:	26 b1       	in	r18, 0x06	; 6
      676:	87 b1       	in	r24, 0x07	; 7
+	
+	return(AD_Result);
      678:	90 e0       	ldi	r25, 0x00	; 0
      67a:	98 2f       	mov	r25, r24
      67c:	88 27       	eor	r24, r24
+}
      67e:	82 0f       	add	r24, r18
      680:	91 1d       	adc	r25, r1
      682:	df 91       	pop	r29
      684:	08 95       	ret
+	u8  i;
+	
+	// A/D-Wandler Initialisieren
+	ADMUXA = channel;		// select Channel 
+	
+	if(channel == 12) ADMUXB = 0x01;			// Wenn interner Temperatur-Sensor gewählt wird, muss die "Internal 1.1V Reference" selektiert sein.
      686:	81 e0       	ldi	r24, 0x01	; 1
      688:	88 b9       	out	0x08, r24	; 8
      68a:	d8 e0       	ldi	r29, 0x08	; 8
+						   else ADMUXB = 0x00;			// Vcc als Referenz = 5V
+	// ADMUXB = 0x01;			// Internal 1.1V Reference
+	// ADMUXB = 0x02;			// Internal 2.2V Reference
+	// ADMUXB = 0x03;			// Internal 4.096V reference
+	
+	if(channel == 12) for(i=0; i<8; i++) delay_nop(120);		// 1.6ms (8x 0.2us) warten, bis interne Temperatur gemessen werden kann
      68c:	88 e7       	ldi	r24, 0x78	; 120
      68e:	06 de       	rcall	.-1012   	; 0x29c <delay_nop>
      690:	d1 50       	subi	r29, 0x01	; 1
@@ -804,148 +847,282 @@ Disassembly of section .text:
      694:	ea cf       	rjmp	.-44     	; 0x66a <get_ADC_Channel+0xa>
 
 00000696 <set_RGB_LED>:
+}
+
+#pragma GCC optimize 2						// Optimitation-Level nicht verstellen, weil sonst das Timing der LCD-Schnittstelle nicht mehr stimmen würde!!!
+
+void set_RGB_LED(u16 rot,u16 gruen,u16 blau)
+{
      696:	dc 01       	movw	r26, r24
+	u8 i;
+	u16 bit_muster;
+	
+	RGB_rot = rot;
      698:	90 93 35 01 	sts	0x0135, r25	; 0x800135 <RGB_rot+0x1>
      69c:	80 93 34 01 	sts	0x0134, r24	; 0x800134 <RGB_rot>
+	RGB_gruen = gruen;
      6a0:	70 93 3b 01 	sts	0x013B, r23	; 0x80013b <RGB_gruen+0x1>
      6a4:	60 93 3a 01 	sts	0x013A, r22	; 0x80013a <RGB_gruen>
+	RGB_blau = blau;
      6a8:	50 93 3f 01 	sts	0x013F, r21	; 0x80013f <RGB_blau+0x1>
      6ac:	40 93 3e 01 	sts	0x013E, r20	; 0x80013e <RGB_blau>
+	DDRA  |=  0x04;						// Port wieder als Ausgang definieren
      6b0:	d2 9a       	sbi	0x1a, 2	; 26
+	
+	write_RGB_LCD_activ = 1;
      6b2:	81 e0       	ldi	r24, 0x01	; 1
      6b4:	80 93 2e 01 	sts	0x012E, r24	; 0x80012e <write_RGB_LCD_activ>
+	RGB_SHCP_0;
      6b8:	da 98       	cbi	0x1b, 2	; 27
+	RGB_OE_1;
      6ba:	d8 98       	cbi	0x1b, 0	; 27
      6bc:	90 e1       	ldi	r25, 0x10	; 16
+	bit_muster =  0x8000;
      6be:	20 e0       	ldi	r18, 0x00	; 0
      6c0:	30 e8       	ldi	r19, 0x80	; 128
      6c2:	17 c0       	rjmp	.+46     	; 0x6f2 <set_RGB_LED+0x5c>
+	for(i=0; i<16; i++)
+	{ if(blau  & bit_muster) RGB_DS_1; else RGB_DS_0;
      6c4:	dc 9a       	sbi	0x1b, 4	; 27
+		RGB_SHCP_1; RGB_SHCP_0;
      6c6:	da 9a       	sbi	0x1b, 2	; 27
      6c8:	da 98       	cbi	0x1b, 2	; 27
+		if(gruen & bit_muster) RGB_DS_1; else RGB_DS_0;
      6ca:	fb 01       	movw	r30, r22
      6cc:	e2 23       	and	r30, r18
      6ce:	f3 23       	and	r31, r19
      6d0:	ef 2b       	or	r30, r31
      6d2:	e1 f0       	breq	.+56     	; 0x70c <set_RGB_LED+0x76>
      6d4:	dc 9a       	sbi	0x1b, 4	; 27
+		RGB_SHCP_1; RGB_SHCP_0;
      6d6:	da 9a       	sbi	0x1b, 2	; 27
      6d8:	da 98       	cbi	0x1b, 2	; 27
+		if(rot   & bit_muster) RGB_DS_1; else RGB_DS_0;
      6da:	fd 01       	movw	r30, r26
      6dc:	e2 23       	and	r30, r18
      6de:	f3 23       	and	r31, r19
      6e0:	ef 2b       	or	r30, r31
      6e2:	e1 f0       	breq	.+56     	; 0x71c <set_RGB_LED+0x86>
      6e4:	dc 9a       	sbi	0x1b, 4	; 27
+		RGB_SHCP_1; RGB_SHCP_0;
      6e6:	da 9a       	sbi	0x1b, 2	; 27
      6e8:	da 98       	cbi	0x1b, 2	; 27
+		bit_muster >>= 1;
      6ea:	36 95       	lsr	r19
      6ec:	27 95       	ror	r18
      6ee:	91 50       	subi	r25, 0x01	; 1
+	
+	write_RGB_LCD_activ = 1;
+	RGB_SHCP_0;
+	RGB_OE_1;
+	bit_muster =  0x8000;
+	for(i=0; i<16; i++)
      6f0:	e1 f0       	breq	.+56     	; 0x72a <set_RGB_LED+0x94>
+	{ if(blau  & bit_muster) RGB_DS_1; else RGB_DS_0;
      6f2:	fa 01       	movw	r30, r20
      6f4:	e2 23       	and	r30, r18
      6f6:	f3 23       	and	r31, r19
      6f8:	ef 2b       	or	r30, r31
      6fa:	21 f7       	brne	.-56     	; 0x6c4 <set_RGB_LED+0x2e>
      6fc:	dc 98       	cbi	0x1b, 4	; 27
+		RGB_SHCP_1; RGB_SHCP_0;
      6fe:	da 9a       	sbi	0x1b, 2	; 27
      700:	da 98       	cbi	0x1b, 2	; 27
+		if(gruen & bit_muster) RGB_DS_1; else RGB_DS_0;
      702:	fb 01       	movw	r30, r22
      704:	e2 23       	and	r30, r18
      706:	f3 23       	and	r31, r19
      708:	ef 2b       	or	r30, r31
      70a:	21 f7       	brne	.-56     	; 0x6d4 <set_RGB_LED+0x3e>
      70c:	dc 98       	cbi	0x1b, 4	; 27
+		RGB_SHCP_1; RGB_SHCP_0;
      70e:	da 9a       	sbi	0x1b, 2	; 27
      710:	da 98       	cbi	0x1b, 2	; 27
+		if(rot   & bit_muster) RGB_DS_1; else RGB_DS_0;
      712:	fd 01       	movw	r30, r26
      714:	e2 23       	and	r30, r18
      716:	f3 23       	and	r31, r19
      718:	ef 2b       	or	r30, r31
      71a:	21 f7       	brne	.-56     	; 0x6e4 <set_RGB_LED+0x4e>
      71c:	dc 98       	cbi	0x1b, 4	; 27
+		RGB_SHCP_1; RGB_SHCP_0;
      71e:	da 9a       	sbi	0x1b, 2	; 27
      720:	da 98       	cbi	0x1b, 2	; 27
+		bit_muster >>= 1;
      722:	36 95       	lsr	r19
      724:	27 95       	ror	r18
      726:	91 50       	subi	r25, 0x01	; 1
+	
+	write_RGB_LCD_activ = 1;
+	RGB_SHCP_0;
+	RGB_OE_1;
+	bit_muster =  0x8000;
+	for(i=0; i<16; i++)
      728:	21 f7       	brne	.-56     	; 0x6f2 <set_RGB_LED+0x5c>
+		RGB_SHCP_1; RGB_SHCP_0;
+		if(rot   & bit_muster) RGB_DS_1; else RGB_DS_0;
+		RGB_SHCP_1; RGB_SHCP_0;
+		bit_muster >>= 1;
+	}
+	RGB_STCP_0;
      72a:	d9 98       	cbi	0x1b, 1	; 27
+	RGB_STCP_1;								// Daten ins "storage register" übernehmen
      72c:	d9 9a       	sbi	0x1b, 1	; 27
+	write_RGB_LCD_activ = 0;
      72e:	10 92 2e 01 	sts	0x012E, r1	; 0x80012e <write_RGB_LCD_activ>
      732:	08 95       	ret
 
 00000734 <init_Mocca_Mini>:
+
+void init_Mocca_Mini(void)  //xyz ganze Funktion
+{
+		// CPU-Clock auf Maximum stellen
+
+	CLKPR	= 0x00;			// System-Takt = 8MHz
      734:	10 92 73 00 	sts	0x0073, r1	; 0x800073 <__EEPROM_REGION_LENGTH__+0x7f0073>
+	//PRR 	 |= (1 << PRUSI);			// SPI
+	//ACSR	 |= (1 << ACD);				// Analog Comparator
+	
+
+	// Initialisierung des ADC's
+	PRR 	 &= ~(1 << PRADC);			// Stromsparmodus des ADC's ausschalten
      738:	e0 e7       	ldi	r30, 0x70	; 112
      73a:	f0 e0       	ldi	r31, 0x00	; 0
      73c:	80 81       	ld	r24, Z
      73e:	8e 7f       	andi	r24, 0xFE	; 254
      740:	80 83       	st	Z, r24
+	ADCSRA |=  (1 << ADEN) | (1 << ADSC) | (0 << ADATE);			// A/D-Wandler Enable, Start, !Auto-Trigger
      742:	85 b1       	in	r24, 0x05	; 5
      744:	80 6c       	ori	r24, 0xC0	; 192
      746:	85 b9       	out	0x05, r24	; 5
+	//ADCSRA |= (0 << ADPS0) | (1 << ADPS1) | (1 << ADPS2);		// Clock = CPU /  64 ==> ADC_Clock = 125kHz ==> Conversen-Time = 104us  
+	//ADCSRA |= (1 << ADPS0) | (1 << ADPS1) | (1 << ADPS2);		// Clock = CPU / 128 ==> ADC_Clock = 125kHz ==> Conversen-Time = 208us  
+	//ADCSRB |= (0 << ADTS0) | (0 << ADTS1) | (0 << ADTS2);		// Free Running mode
+	
+	// PWM für LED-Dimmer initialisieren
+	DDRB			|= (1 << PB2);													// PB2 = Output
      748:	ba 9a       	sbi	0x17, 2	; 23
+	TCCR0A		|= (1 << COM0A1) | (1 << WGM00);				// phase correct PWM mode A
      74a:	80 b7       	in	r24, 0x30	; 48
      74c:	81 68       	ori	r24, 0x81	; 129
      74e:	80 bf       	out	0x30, r24	; 48
+	TCCR0A		|= (1 << COM0B1) | (1 << WGM00);				// phase correct PWM mode B
      750:	80 b7       	in	r24, 0x30	; 48
      752:	81 62       	ori	r24, 0x21	; 33
      754:	80 bf       	out	0x30, r24	; 48
+//	TOCPMCOE	|=   (1 << TOCC4OE);										// Output enable TOCC4
+
+//	TOCPMSA1	&= ~((1 << TOCC7S1) | (1 << TOCC7S0));	// 00: Output MUX: 8Bit-PWM Timer/Counter0 OC0A auf Pin PB2 - Pin5 - TOCC7 schalten
+//	TOCPMCOE	|=   (1 << TOCC7OE);										// Output enable TOCC7
+	
+	OCR0A			 =   0;									// initial PWM pulse width A
      756:	16 be       	out	0x36, r1	; 54
+	OCR0B			 =   10;								// initial PWM pulse width B
      758:	8a e0       	ldi	r24, 0x0A	; 10
      75a:	8c bf       	out	0x3c, r24	; 60
+	// Bei System-Takt = 1MHz gilt:
+	//TCCR0B |= (0 << CS00) | (1 << CS01);		// PWM-Grundtakt = 254Hz: clock source = CLK/8, start PWM (125kHz => 8us, 8us*255 *2 = 4.08ms => 254Hz)
+	//TCCR0B |= (1 << CS00) | (0 << CS01);		// PWM-Grundtakt = 1.96kHz: clock source = CLK  , start PWM (  1MHz => 1us, 1us*255 *2 = 0.51ms => 1.96kHz)
+	
+	// Bei System-Takt = 8MHz gilt:
+	TCCR0B |= (1 << CS00) | (1 << CS01);		// PWM-Grundtakt = 245Hz: clock source = CLK/64  , start PWM ( 125kHz => 8us, 8us*255 *2 = 4.08ms => 245Hz)
      75c:	83 b7       	in	r24, 0x33	; 51
      75e:	83 60       	ori	r24, 0x03	; 3
      760:	83 bf       	out	0x33, r24	; 51
+	//TCCR0B |= (0 << CS00) | (1 << CS01);		// PWM-Grundtakt = 1.96kHz: clock source = CLK/8  , start PWM ( 1MHz =>   1us,   1us*255 *2 = 0.51ms => 1.96kHz)
+	//TCCR0B |= (1 << CS00) | (0 << CS01);		// PWM-Grundtakt = 15.68kHz: clock source = CLK  , start PWM (  8MHz => 125ns, 125ns*255 *2 = 0.63.75us => 15.68kHz)
+	
+	// 16-Bit-Timer für 1ms-Ticker
+	GTCCR  |= (1 << TSM) | (1 << PSR  );  //Timer anhalten, Prescaler Reset
      762:	83 b5       	in	r24, 0x23	; 35
      764:	81 68       	ori	r24, 0x81	; 129
      766:	83 bd       	out	0x23, r24	; 35
+	TCNT1	= 0x1FF;														// 12.12.6 TCNTnH and TCNTnL – Timer/Counter
      768:	8f ef       	ldi	r24, 0xFF	; 255
      76a:	91 e0       	ldi	r25, 0x01	; 1
      76c:	9d bd       	out	0x2d, r25	; 45
      76e:	8c bd       	out	0x2c, r24	; 44
+	TCCR1A |= (0 << COM1A1) | (0 << COM1A1);	// Normal Operation
      770:	8f b5       	in	r24, 0x2f	; 47
      772:	8f bd       	out	0x2f, r24	; 47
+	TCCR1A |= (0 <<  WGM11) | (0 <<  WGM10);	// CTC-Mode
      774:	8f b5       	in	r24, 0x2f	; 47
      776:	8f bd       	out	0x2f, r24	; 47
+	TCCR1B |= (0 <<  WGM13) | (1 <<  WGM12);	// CTC-Mode
      778:	8e b5       	in	r24, 0x2e	; 46
      77a:	88 60       	ori	r24, 0x08	; 8
      77c:	8e bd       	out	0x2e, r24	; 46
+	//TCCR1B |= (0 <<   CS12) | (0 <<   CS11) | (1 <<   CS10);	// Clock select CLK/1: 1'000'000Hz ==> f = 1'000'000Hz ==> t = 1us
+	TCCR1B |= (0 <<   CS12) | (1 <<   CS11) | (0 <<   CS10);	// Clock select CLK/8: 8'000'000Hz ==> f = 1'000'000Hz ==> t = 1us
      77e:	8e b5       	in	r24, 0x2e	; 46
      780:	82 60       	ori	r24, 0x02	; 2
      782:	8e bd       	out	0x2e, r24	; 46
+	TCCR1C |= (0 <<  FOC1A);					// no Output Compare
      784:	82 b5       	in	r24, 0x22	; 34
      786:	82 bd       	out	0x22, r24	; 34
+	OCR1A   = 1000-1;									// 1us * 1000 = 1ms
      788:	87 ee       	ldi	r24, 0xE7	; 231
      78a:	93 e0       	ldi	r25, 0x03	; 3
      78c:	9b bd       	out	0x2b, r25	; 43
      78e:	8a bd       	out	0x2a, r24	; 42
+	TIMSK1 |= (1 << OCIE1A);					// Interrupt Enable
      790:	79 9a       	sbi	0x0f, 1	; 15
+	GTCCR  &= ~(1 << TSM);						// Timer starten
      792:	83 b5       	in	r24, 0x23	; 35
      794:	8f 77       	andi	r24, 0x7F	; 127
      796:	83 bd       	out	0x23, r24	; 35
+	
+	GIMSK  |= (1 << PCIE0);			// General Interrupt Mask Register für PCINT[7:0] any change
      798:	8b b7       	in	r24, 0x3b	; 59
      79a:	80 61       	ori	r24, 0x10	; 16
      79c:	8b bf       	out	0x3b, r24	; 59
+	PCMSK0 |= (1 << 2);					// Interrupt für SPI-Eingang setzen (Pin 11/PA2/PCINT2)
      79e:	92 9a       	sbi	0x12, 2	; 18
+
+	sei();										// Global Interrupts aktivieren
      7a0:	78 94       	sei
+	
+	// Ports als EIN- oder AUSGANG initialisieren
+	
+	// Ausgänge
+	//PUEA  &= ~0x03;			// PORTA Bit 0-1: Pull-Up Widerstand ausschalten
+	DDRA  |=  0x03;			// LED 1 und 2 auf Mocca Mini
      7a2:	8a b3       	in	r24, 0x1a	; 26
      7a4:	83 60       	ori	r24, 0x03	; 3
      7a6:	8a bb       	out	0x1a, r24	; 26
+	PORTA &= ~0x03;			// LED 1 und 2 ausschalten
      7a8:	8b b3       	in	r24, 0x1b	; 27
      7aa:	8c 7f       	andi	r24, 0xFC	; 252
      7ac:	8b bb       	out	0x1b, r24	; 27
+	DDRA  |=  0x02;			// Ausgang PA.1 Pin 12:		RGB storage register clock
      7ae:	d1 9a       	sbi	0x1a, 1	; 26
+	
+	DDRA  |=  0x04;			// Ausgang PA.2 Pin 11:		RGB shift register clock
      7b0:	d2 9a       	sbi	0x1a, 2	; 26
+	DDRA  |=  0x20;			// freier I/O
      7b2:	d5 9a       	sbi	0x1a, 5	; 26
+	
+
+	// Eingänge
+	
+	//DDRA  &= ~0x04;			// Eingang PA2 Pin 11:		Switch vom LCD-RGB-SWITCH einlesen
+	DDRA  &= ~0x08;			// Eingang PA3 Pin 10:		A/D-Channel 3 Umgebungs-Temperatur
      7b4:	d3 98       	cbi	0x1a, 3	; 26
+	DDRA  &= ~0x80;			// Eingang PA7 Pin  6:		A/D-Channel 7 Potentiometer
      7b6:	d7 98       	cbi	0x1a, 7	; 26
+		
+	/* Ausgänge für LCD werden im Treiber konfiguriert
+	DDRA |= 0x10;								// Port PA4 auf Output setzen LCD-Outputs SOD
+	DDRA |= 0x40;								// Port PA6 auf Output setzen LCD-Outputs SCLK	*/
+
+	DDRA  |=  0x04;
      7b8:	d2 9a       	sbi	0x1a, 2	; 26
+	DDRB  |=  0x07;			// RGB-LED
      7ba:	87 b3       	in	r24, 0x17	; 23
      7bc:	87 60       	ori	r24, 0x07	; 7
      7be:	87 bb       	out	0x17, r24	; 23
+	
+	set_RGB_LED(0,0,0);
      7c0:	40 e0       	ldi	r20, 0x00	; 0
      7c2:	50 e0       	ldi	r21, 0x00	; 0
      7c4:	60 e0       	ldi	r22, 0x00	; 0
@@ -955,15 +1132,27 @@ Disassembly of section .text:
      7cc:	64 cf       	rjmp	.-312    	; 0x696 <set_RGB_LED>
 
 000007ce <read_SWITCH>:
+{
+	u8  i;
+	u16 bit_muster, bit_dip_nr, switch_wert;
+	
+	// Die korrekten Werte wieder ins RGB-Schieberegster schreiben, damit beim nächsten RGB_STCP-Puls (verursacht durch die korrekten Daten übernomen werden.
+	RGB_SHCP_0;
      7ce:	da 98       	cbi	0x1b, 2	; 27
+	RGB_OE_1;
      7d0:	d8 98       	cbi	0x1b, 0	; 27
      7d2:	40 e1       	ldi	r20, 0x10	; 16
+	bit_muster =  0x8000;
      7d4:	80 e0       	ldi	r24, 0x00	; 0
      7d6:	90 e8       	ldi	r25, 0x80	; 128
      7d8:	1e c0       	rjmp	.+60     	; 0x816 <read_SWITCH+0x48>
+	for(i=0; i<16; i++)
+	{ if(RGB_blau  & bit_muster) RGB_DS_1; else RGB_DS_0;
      7da:	dc 9a       	sbi	0x1b, 4	; 27
+		RGB_SHCP_1; RGB_SHCP_0;
      7dc:	da 9a       	sbi	0x1b, 2	; 27
      7de:	da 98       	cbi	0x1b, 2	; 27
+		if(RGB_gruen & bit_muster) RGB_DS_1; else RGB_DS_0;
      7e0:	20 91 3a 01 	lds	r18, 0x013A	; 0x80013a <RGB_gruen>
      7e4:	30 91 3b 01 	lds	r19, 0x013B	; 0x80013b <RGB_gruen+0x1>
      7e8:	28 23       	and	r18, r24
@@ -972,8 +1161,10 @@ Disassembly of section .text:
      7ee:	09 f4       	brne	.+2      	; 0x7f2 <read_SWITCH+0x24>
      7f0:	75 c0       	rjmp	.+234    	; 0x8dc <read_SWITCH+0x10e>
      7f2:	dc 9a       	sbi	0x1b, 4	; 27
+		RGB_SHCP_1; RGB_SHCP_0;
      7f4:	da 9a       	sbi	0x1b, 2	; 27
      7f6:	da 98       	cbi	0x1b, 2	; 27
+		if(RGB_rot   & bit_muster) RGB_DS_1; else RGB_DS_0;
      7f8:	20 91 34 01 	lds	r18, 0x0134	; 0x800134 <RGB_rot>
      7fc:	30 91 35 01 	lds	r19, 0x0135	; 0x800135 <RGB_rot+0x1>
      800:	28 23       	and	r18, r24
@@ -981,12 +1172,21 @@ Disassembly of section .text:
      804:	23 2b       	or	r18, r19
      806:	89 f0       	breq	.+34     	; 0x82a <read_SWITCH+0x5c>
      808:	dc 9a       	sbi	0x1b, 4	; 27
+		RGB_SHCP_1; RGB_SHCP_0;
      80a:	da 9a       	sbi	0x1b, 2	; 27
      80c:	da 98       	cbi	0x1b, 2	; 27
+		bit_muster >>= 1;
      80e:	96 95       	lsr	r25
      810:	87 95       	ror	r24
      812:	41 50       	subi	r20, 0x01	; 1
+	
+	// Die korrekten Werte wieder ins RGB-Schieberegster schreiben, damit beim nächsten RGB_STCP-Puls (verursacht durch die korrekten Daten übernomen werden.
+	RGB_SHCP_0;
+	RGB_OE_1;
+	bit_muster =  0x8000;
+	for(i=0; i<16; i++)
      814:	89 f0       	breq	.+34     	; 0x838 <read_SWITCH+0x6a>
+	{ if(RGB_blau  & bit_muster) RGB_DS_1; else RGB_DS_0;
      816:	20 91 3e 01 	lds	r18, 0x013E	; 0x80013e <RGB_blau>
      81a:	30 91 3f 01 	lds	r19, 0x013F	; 0x80013f <RGB_blau+0x1>
      81e:	28 23       	and	r18, r24
@@ -995,46 +1195,116 @@ Disassembly of section .text:
      824:	d1 f6       	brne	.-76     	; 0x7da <read_SWITCH+0xc>
      826:	dc 98       	cbi	0x1b, 4	; 27
      828:	d9 cf       	rjmp	.-78     	; 0x7dc <read_SWITCH+0xe>
+		RGB_SHCP_1; RGB_SHCP_0;
+		if(RGB_gruen & bit_muster) RGB_DS_1; else RGB_DS_0;
+		RGB_SHCP_1; RGB_SHCP_0;
+		if(RGB_rot   & bit_muster) RGB_DS_1; else RGB_DS_0;
      82a:	dc 98       	cbi	0x1b, 4	; 27
+		RGB_SHCP_1; RGB_SHCP_0;
      82c:	da 9a       	sbi	0x1b, 2	; 27
      82e:	da 98       	cbi	0x1b, 2	; 27
+		bit_muster >>= 1;
      830:	96 95       	lsr	r25
      832:	87 95       	ror	r24
      834:	41 50       	subi	r20, 0x01	; 1
+	
+	// Die korrekten Werte wieder ins RGB-Schieberegster schreiben, damit beim nächsten RGB_STCP-Puls (verursacht durch die korrekten Daten übernomen werden.
+	RGB_SHCP_0;
+	RGB_OE_1;
+	bit_muster =  0x8000;
+	for(i=0; i<16; i++)
      836:	79 f7       	brne	.-34     	; 0x816 <read_SWITCH+0x48>
+		RGB_SHCP_1; RGB_SHCP_0;
+		if(RGB_rot   & bit_muster) RGB_DS_1; else RGB_DS_0;
+		RGB_SHCP_1; RGB_SHCP_0;
+		bit_muster >>= 1;
+	}
+	RGB_STCP_0;
      838:	d9 98       	cbi	0x1b, 1	; 27
+	RGB_STCP_1;								// Daten ins "storage register" übernehmen
      83a:	d9 9a       	sbi	0x1b, 1	; 27
+	
+	
+	RGB_SHCP_0;							// um Eingangskapazität des Ports zu leeren, sonst würde am Eingang anschliessend immer eine 1 gelesen.
      83c:	da 98       	cbi	0x1b, 2	; 27
+	DDRA  &= ~0x04;						// Port als Eingang definieren
      83e:	d2 98       	cbi	0x1a, 2	; 26
+	
+	SWICH_P_Load_0;						// parallel load: paralleles Einlesen aller Eingänge (LOW-Pegel)
      840:	d9 98       	cbi	0x1b, 1	; 27
+	SWICH_P_Load_1;						// serial shift : Ab jetzt werden die einzelnen Bits seriell herausgelesen. (HIGH-Pegel)
      842:	d9 9a       	sbi	0x1b, 1	; 27
+	
+	switch_wert = 0;
+	bit_muster = 1;
+	SWITCH_CLK_0;						
      844:	dc 98       	cbi	0x1b, 4	; 27
      846:	80 e1       	ldi	r24, 0x10	; 16
+	DDRA  &= ~0x04;						// Port als Eingang definieren
+	
+	SWICH_P_Load_0;						// parallel load: paralleles Einlesen aller Eingänge (LOW-Pegel)
+	SWICH_P_Load_1;						// serial shift : Ab jetzt werden die einzelnen Bits seriell herausgelesen. (HIGH-Pegel)
+	
+	switch_wert = 0;
      848:	40 e0       	ldi	r20, 0x00	; 0
      84a:	50 e0       	ldi	r21, 0x00	; 0
+	bit_muster = 1;
      84c:	21 e0       	ldi	r18, 0x01	; 1
      84e:	30 e0       	ldi	r19, 0x00	; 0
+	SWITCH_CLK_0;						
+	for(i=0; i<16; i++)
+	{ 
+		if(SWITCH_QH) switch_wert |= bit_muster;
      850:	ca 9b       	sbis	0x19, 2	; 25
      852:	02 c0       	rjmp	.+4      	; 0x858 <read_SWITCH+0x8a>
      854:	42 2b       	or	r20, r18
      856:	53 2b       	or	r21, r19
+		bit_muster = bit_muster << 1;
      858:	22 0f       	add	r18, r18
      85a:	33 1f       	adc	r19, r19
+			
+		SWITCH_CLK_1;
      85c:	dc 9a       	sbi	0x1b, 4	; 27
+		SWITCH_CLK_0;
      85e:	dc 98       	cbi	0x1b, 4	; 27
      860:	81 50       	subi	r24, 0x01	; 1
+	SWICH_P_Load_1;						// serial shift : Ab jetzt werden die einzelnen Bits seriell herausgelesen. (HIGH-Pegel)
+	
+	switch_wert = 0;
+	bit_muster = 1;
+	SWITCH_CLK_0;						
+	for(i=0; i<16; i++)
      862:	b1 f7       	brne	.-20     	; 0x850 <read_SWITCH+0x82>
+		bit_muster = bit_muster << 1;
+			
+		SWITCH_CLK_1;
+		SWITCH_CLK_0;
+	}
+	DDRA  |=  0x04;						// Port wieder als Ausgang definieren
      864:	d2 9a       	sbi	0x1a, 2	; 26
+
+	DIP_Switch = 0;
      866:	10 92 33 01 	sts	0x0133, r1	; 0x800133 <DIP_Switch+0x1>
      86a:	10 92 32 01 	sts	0x0132, r1	; 0x800132 <DIP_Switch>
      86e:	2a e0       	ldi	r18, 0x0A	; 10
      870:	30 e0       	ldi	r19, 0x00	; 0
      872:	a0 e0       	ldi	r26, 0x00	; 0
      874:	b0 e0       	ldi	r27, 0x00	; 0
+	bit_muster =   1;
+	bit_dip_nr = 512;
      876:	60 e0       	ldi	r22, 0x00	; 0
      878:	72 e0       	ldi	r23, 0x02	; 2
+		SWITCH_CLK_0;
+	}
+	DDRA  |=  0x04;						// Port wieder als Ausgang definieren
+
+	DIP_Switch = 0;
+	bit_muster =   1;
      87a:	81 e0       	ldi	r24, 0x01	; 1
      87c:	90 e0       	ldi	r25, 0x00	; 0
+	bit_dip_nr = 512;
+	for(i=0; i<10; i++)
+	{ if(switch_wert & bit_muster) DIP_Switch |= bit_dip_nr;
      87e:	fa 01       	movw	r30, r20
      880:	e8 23       	and	r30, r24
      882:	f9 23       	and	r31, r25
@@ -1043,49 +1313,80 @@ Disassembly of section .text:
      888:	a6 2b       	or	r26, r22
      88a:	b7 2b       	or	r27, r23
      88c:	31 e0       	ldi	r19, 0x01	; 1
+		bit_muster <<= 1;
      88e:	88 0f       	add	r24, r24
      890:	99 1f       	adc	r25, r25
+		bit_dip_nr >>= 1;
      892:	76 95       	lsr	r23
      894:	67 95       	ror	r22
      896:	21 50       	subi	r18, 0x01	; 1
+	DDRA  |=  0x04;						// Port wieder als Ausgang definieren
+
+	DIP_Switch = 0;
+	bit_muster =   1;
+	bit_dip_nr = 512;
+	for(i=0; i<10; i++)
      898:	91 f7       	brne	.-28     	; 0x87e <read_SWITCH+0xb0>
      89a:	31 11       	cpse	r19, r1
      89c:	3a c0       	rjmp	.+116    	; 0x912 <read_SWITCH+0x144>
+	{ if(switch_wert & bit_muster) DIP_Switch |= bit_dip_nr;
+		bit_muster <<= 1;
+		bit_dip_nr >>= 1;
+	}
+	if(switch_wert & 1024) Taste_1 = 1; else Taste_1 = 0;
      89e:	52 ff       	sbrs	r21, 2
      8a0:	1f c0       	rjmp	.+62     	; 0x8e0 <read_SWITCH+0x112>
      8a2:	81 e0       	ldi	r24, 0x01	; 1
      8a4:	90 e0       	ldi	r25, 0x00	; 0
      8a6:	90 93 37 01 	sts	0x0137, r25	; 0x800137 <Taste_1+0x1>
      8aa:	80 93 36 01 	sts	0x0136, r24	; 0x800136 <Taste_1>
+	if(switch_wert & 2048) Taste_2 = 1; else Taste_2 = 0;
      8ae:	53 ff       	sbrs	r21, 3
      8b0:	1d c0       	rjmp	.+58     	; 0x8ec <read_SWITCH+0x11e>
      8b2:	81 e0       	ldi	r24, 0x01	; 1
      8b4:	90 e0       	ldi	r25, 0x00	; 0
      8b6:	90 93 3d 01 	sts	0x013D, r25	; 0x80013d <Taste_2+0x1>
      8ba:	80 93 3c 01 	sts	0x013C, r24	; 0x80013c <Taste_2>
+	if(switch_wert & 4096) Taste_3 = 1; else Taste_3 = 0;
      8be:	54 ff       	sbrs	r21, 4
      8c0:	1b c0       	rjmp	.+54     	; 0x8f8 <read_SWITCH+0x12a>
      8c2:	81 e0       	ldi	r24, 0x01	; 1
      8c4:	90 e0       	ldi	r25, 0x00	; 0
      8c6:	90 93 41 01 	sts	0x0141, r25	; 0x800141 <Taste_3+0x1>
      8ca:	80 93 40 01 	sts	0x0140, r24	; 0x800140 <Taste_3>
+	if(switch_wert & 8192) Taste_4 = 1; else Taste_4 = 0;
      8ce:	55 fd       	sbrc	r21, 5
      8d0:	19 c0       	rjmp	.+50     	; 0x904 <read_SWITCH+0x136>
      8d2:	10 92 39 01 	sts	0x0139, r1	; 0x800139 <Taste_4+0x1>
      8d6:	10 92 38 01 	sts	0x0138, r1	; 0x800138 <Taste_4>
      8da:	08 95       	ret
+	RGB_OE_1;
+	bit_muster =  0x8000;
+	for(i=0; i<16; i++)
+	{ if(RGB_blau  & bit_muster) RGB_DS_1; else RGB_DS_0;
+		RGB_SHCP_1; RGB_SHCP_0;
+		if(RGB_gruen & bit_muster) RGB_DS_1; else RGB_DS_0;
      8dc:	dc 98       	cbi	0x1b, 4	; 27
      8de:	8a cf       	rjmp	.-236    	; 0x7f4 <read_SWITCH+0x26>
+	for(i=0; i<10; i++)
+	{ if(switch_wert & bit_muster) DIP_Switch |= bit_dip_nr;
+		bit_muster <<= 1;
+		bit_dip_nr >>= 1;
+	}
+	if(switch_wert & 1024) Taste_1 = 1; else Taste_1 = 0;
      8e0:	10 92 37 01 	sts	0x0137, r1	; 0x800137 <Taste_1+0x1>
      8e4:	10 92 36 01 	sts	0x0136, r1	; 0x800136 <Taste_1>
+	if(switch_wert & 2048) Taste_2 = 1; else Taste_2 = 0;
      8e8:	53 fd       	sbrc	r21, 3
      8ea:	e3 cf       	rjmp	.-58     	; 0x8b2 <read_SWITCH+0xe4>
      8ec:	10 92 3d 01 	sts	0x013D, r1	; 0x80013d <Taste_2+0x1>
      8f0:	10 92 3c 01 	sts	0x013C, r1	; 0x80013c <Taste_2>
+	if(switch_wert & 4096) Taste_3 = 1; else Taste_3 = 0;
      8f4:	54 fd       	sbrc	r21, 4
      8f6:	e5 cf       	rjmp	.-54     	; 0x8c2 <read_SWITCH+0xf4>
      8f8:	10 92 41 01 	sts	0x0141, r1	; 0x800141 <Taste_3+0x1>
      8fc:	10 92 40 01 	sts	0x0140, r1	; 0x800140 <Taste_3>
+	if(switch_wert & 8192) Taste_4 = 1; else Taste_4 = 0;
      900:	55 ff       	sbrs	r21, 5
      902:	e7 cf       	rjmp	.-50     	; 0x8d2 <read_SWITCH+0x104>
      904:	81 e0       	ldi	r24, 0x01	; 1
@@ -1098,6 +1399,12 @@ Disassembly of section .text:
      91a:	c1 cf       	rjmp	.-126    	; 0x89e <read_SWITCH+0xd0>
 
 0000091c <__vector_2>:
+#pragma GCC optimize 0
+
+
+// Interrupt-Funktion, die auslöst, wenn SPI-Eingang sich verändert (Pin 11/PA2/PCINT2)
+ISR (PCINT0_vect) // Interrupt für Inputs PCINT[7:0]
+{
      91c:	1f 92       	push	r1
      91e:	0f 92       	push	r0
      920:	00 90 5f 00 	lds	r0, 0x005F	; 0x80005f <__EEPROM_REGION_LENGTH__+0x7f005f>
@@ -1107,6 +1414,7 @@ Disassembly of section .text:
      92a:	df 93       	push	r29
      92c:	cd b7       	in	r28, 0x3d	; 61
      92e:	de b7       	in	r29, 0x3e	; 62
+}
      930:	00 00       	nop
      932:	df 91       	pop	r29
      934:	cf 91       	pop	r28
@@ -1117,6 +1425,10 @@ Disassembly of section .text:
      940:	18 95       	reti
 
 00000942 <__vector_6>:
+
+
+ISR (TIMER1_COMPA_vect) // Dieser Timer-Interrupt löst im 1ms-Takt aus.
+{	
      942:	1f 92       	push	r1
      944:	0f 92       	push	r0
      946:	00 90 5f 00 	lds	r0, 0x005F	; 0x80005f <__EEPROM_REGION_LENGTH__+0x7f005f>
@@ -1138,6 +1450,8 @@ Disassembly of section .text:
      968:	df 93       	push	r29
      96a:	cd b7       	in	r28, 0x3d	; 61
      96c:	de b7       	in	r29, 0x3e	; 62
+	
+	tick_1ms++;
      96e:	80 91 2a 01 	lds	r24, 0x012A	; 0x80012a <tick_1ms>
      972:	90 91 2b 01 	lds	r25, 0x012B	; 0x80012b <tick_1ms+0x1>
      976:	a0 91 2c 01 	lds	r26, 0x012C	; 0x80012c <tick_1ms+0x2>
@@ -1149,6 +1463,8 @@ Disassembly of section .text:
      988:	90 93 2b 01 	sts	0x012B, r25	; 0x80012b <tick_1ms+0x1>
      98c:	a0 93 2c 01 	sts	0x012C, r26	; 0x80012c <tick_1ms+0x2>
      990:	b0 93 2d 01 	sts	0x012D, r27	; 0x80012d <tick_1ms+0x3>
+	
+	if(tick_1ms_cnt > 0) tick_1ms_cnt--;										// Wird für 1ms-Tick benötigt
      994:	80 91 26 01 	lds	r24, 0x0126	; 0x800126 <__data_end>
      998:	90 91 27 01 	lds	r25, 0x0127	; 0x800127 <__data_end+0x1>
      99c:	a0 91 28 01 	lds	r26, 0x0128	; 0x800128 <__data_end+0x2>
@@ -1168,6 +1484,7 @@ Disassembly of section .text:
      9c6:	90 93 27 01 	sts	0x0127, r25	; 0x800127 <__data_end+0x1>
      9ca:	a0 93 28 01 	sts	0x0128, r26	; 0x800128 <__data_end+0x2>
      9ce:	b0 93 29 01 	sts	0x0129, r27	; 0x800129 <__data_end+0x3>
+	if(LCD_Refresh_Time_cnt > 0) LCD_Refresh_Time_cnt--;
      9d2:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <LCD_Refresh_Time_cnt>
      9d6:	90 91 01 01 	lds	r25, 0x0101	; 0x800101 <LCD_Refresh_Time_cnt+0x1>
      9da:	89 2b       	or	r24, r25
@@ -1177,10 +1494,14 @@ Disassembly of section .text:
      9e6:	01 97       	sbiw	r24, 0x01	; 1
      9e8:	90 93 01 01 	sts	0x0101, r25	; 0x800101 <LCD_Refresh_Time_cnt+0x1>
      9ec:	80 93 00 01 	sts	0x0100, r24	; 0x800100 <LCD_Refresh_Time_cnt>
+	
+	if (write_RGB_LCD_activ == 0) read_SWITCH();		// liesst alle DIP-Switch, Tasten und Optionen-Jumper ein und speichert die Zustaände in globalen Variablen ab.
      9f0:	80 91 2e 01 	lds	r24, 0x012E	; 0x80012e <write_RGB_LCD_activ>
      9f4:	88 23       	and	r24, r24
      9f6:	09 f4       	brne	.+2      	; 0x9fa <__vector_6+0xb8>
      9f8:	ea de       	rcall	.-556    	; 0x7ce <read_SWITCH>
+	
+}
      9fa:	00 00       	nop
      9fc:	df 91       	pop	r29
      9fe:	cf 91       	pop	r28

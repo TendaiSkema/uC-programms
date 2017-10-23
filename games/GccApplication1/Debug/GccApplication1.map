@@ -617,12 +617,12 @@ END GROUP
  .debug_frame   0x00000000      0x238 Mocca_Mini_Driver.o
  .debug_frame   0x00000238       0xd4 NewMain.o
 
-.debug_str      0x00000000      0x742
+.debug_str      0x00000000      0x6fd
  *(.debug_str)
  .debug_str     0x00000000      0x2a5 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATtiny_DFP/1.2.118/gcc/dev/attiny841/avr25/crtattiny841.o
- .debug_str     0x000002a5      0x323 Mocca_Mini_Driver.o
-                                0x38d (size before relaxing)
- .debug_str     0x000005c8      0x17a NewMain.o
+ .debug_str     0x000002a5      0x31f Mocca_Mini_Driver.o
+                                0x389 (size before relaxing)
+ .debug_str     0x000005c4      0x139 NewMain.o
                                 0x333 (size before relaxing)
 
 .debug_loc      0x00000000     0x187a

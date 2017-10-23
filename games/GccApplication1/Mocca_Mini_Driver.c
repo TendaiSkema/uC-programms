@@ -41,9 +41,9 @@ void wait_1ms(u32 delay)
 	while(tick_1ms_cnt != 1);
 }
 
-void delay_nop(u8 time)				// time = 1 ==> Delay = 2.08us
-															// time > 1 ==> Delay = time * 0.62us
-{ u8 i;
+void delay_nop(u8 time)				// time = 1 ==> Delay = 2.08us															// time > 1 ==> Delay = time * 0.62us
+{ 
+	u8 i;
 	for(i=0; i<time; i++) __asm__ __volatile__ ("nop");
 }
 
